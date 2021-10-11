@@ -1,5 +1,5 @@
 const board = document.getElementById("gameboard");
-const size = 15;
+const size = 25;
 let rows = board.clientHeight / size;
 let columns = board.clientWidth / size;
 
@@ -66,6 +66,7 @@ function applyRules() {
 
   // create a new array of cells
   let newCells = [];
+  let calcCound = 0;
 
   // iterate through the old array
   for (let i = 0; i < cells.length; i++) {
@@ -82,6 +83,7 @@ function applyRules() {
           if (cells[i + x] && cells[i + x][j + y]) {
             neighbours++;
           }
+          calcCound++;
         }
       }
       // apply the rules
@@ -102,14 +104,22 @@ function applyRules() {
     newCells.push(rowCells);
   }
   // apply the new array to the old array
+  console.log(calcCound + " calculations");
   cells = newCells;
   drawBoard();
+}
+
+function step(timestamp) {
+  if (play) {
+    applyRules();
+  }
+  window.requestAnimationFrame(step);
 }
 
 window.onload = function () {
   buildCells();
   drawBoard();
-  setInterval(applyRules, 20);
+  window.requestAnimationFrame(step);
 };
 
 window.onresize = function () {
