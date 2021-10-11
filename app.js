@@ -1,7 +1,7 @@
 const board = document.getElementById("gameboard");
 const size = 15;
-const rows = board.clientHeight / size;
-const columns = board.clientWidth / size;
+let rows = board.clientHeight / size;
+let columns = board.clientWidth / size;
 
 let cells = [];
 let play = false;
@@ -12,14 +12,20 @@ document.getElementById("togglePlayState").onclick = function () {
 };
 
 function buildCells() {
+  cellProtos = [];
   for (let i = 0; i < rows; i++) {
     let rowCells = [];
     for (let j = 0; j < columns; j++) {
-      rowCells.push(false);
+      if (cells[i] && cells[i][j]) {
+        rowCells.push(cells[i][j]);
+      } else {
+        rowCells.push(false);
+      }
       //   rowCells.push(Math.random() > 0.5);
     }
-    cells.push(rowCells);
+    cellProtos.push(rowCells);
   }
+  cells = cellProtos;
 }
 
 function drawBoard() {
@@ -104,4 +110,11 @@ window.onload = function () {
   buildCells();
   drawBoard();
   setInterval(applyRules, 20);
+};
+
+window.onresize = function () {
+  rows = board.clientHeight / size;
+  columns = board.clientWidth / size;
+  buildCells();
+  drawBoard();
 };
