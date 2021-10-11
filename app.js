@@ -4,6 +4,7 @@ let rows = board.clientHeight / size;
 let columns = board.clientWidth / size;
 
 let cells = [];
+let aliveCells = [];
 let play = false;
 
 document.getElementById("togglePlayState").onclick = function () {
@@ -48,8 +49,18 @@ function drawBoard() {
       }
       cell.onclick = function () {
         cell.classList.toggle("alive");
-        cells[this.dataset.x][this.dataset.y] =
-          !cells[this.dataset.x][this.dataset.y];
+        const state = cells[this.dataset.x][this.dataset.y];
+        cells[this.dataset.x][this.dataset.y] = !state;
+        if (!state) {
+          aliveCells.push({
+            x: parseInt(this.dataset.x),
+            y: parseInt(this.dataset.y),
+          });
+        } else {
+          aliveCells = aliveCells.filter(
+            (cell) => cell.x !== this.dataset.x || cell.y !== this.dataset.y
+          );
+        }
       };
       board.appendChild(cell);
     }
@@ -64,48 +75,68 @@ function applyRules() {
   // any dead cell with three live neighbours becomes a live cell
   // all other live cells die in the next generation
 
-  // create a new array of cells
-  let newCells = [];
-  let calcCound = 0;
-
-  // iterate through the old array
-  for (let i = 0; i < cells.length; i++) {
-    let rowCells = [];
-    for (let j = 0; j < cells[i].length; j++) {
-      let state = cells[i][j];
-      let neighbours = 0;
-      // check the neighbours
-      for (let x = -1; x <= 1; x++) {
-        for (let y = -1; y <= 1; y++) {
-          if (x === 0 && y === 0) {
-            continue;
-          }
-          if (cells[i + x] && cells[i + x][j + y]) {
-            neighbours++;
-          }
-          calcCound++;
-        }
-      }
-      // apply the rules
-      if (state) {
-        if (neighbours === 2 || neighbours === 3) {
-          rowCells.push(true);
-        } else {
-          rowCells.push(false);
-        }
-      } else {
-        if (neighbours === 3) {
-          rowCells.push(true);
-        } else {
-          rowCells.push(false);
+  const checkCells = [...aliveCells];
+  for (let i = 0; i < aliveCells.length; i++) {
+    // get all neighbours of alive cell
+    const x = aliveCells[i].x;
+    const y = aliveCells[i].y;
+    for (let j = -1; j <= 1; j++) {
+      for (let k = -1; k <= 1; k++) {
+        const tempCell = { x: x + j, y: y + k };
+        if (!checkCells.find((c) => c.x === tempCell.x && c.y === tempCell.y)) {
+          checkCells.push(tempCell);
         }
       }
     }
-    newCells.push(rowCells);
   }
-  // apply the new array to the old array
-  console.log(calcCound + " calculations");
+
+  const newCells = [...cells];
+  const newAliveCells = [];
+  let calcCount = 0;
+
+  for (let i = 0; i < checkCells.length; i++) {
+    let x = checkCells[i].x;
+    let y = checkCells[i].y;
+    let neighbors = 0;
+    for (let j = -1; j <= 1; j++) {
+      for (let k = -1; k <= 1; k++) {
+        if (j === 0 && k === 0) {
+          continue;
+        }
+        if (aliveCells.find((c) => c.x === x + j && c.y === y + k)) {
+          neighbors++;
+        }
+        calcCount++;
+      }
+    }
+    if (aliveCells.find((c) => c.x === x && c.y === y)) {
+      if (neighbors === 2 || neighbors === 3) {
+        newAliveCells.push({ x: x, y: y });
+        if (x >= 0 && y >= 0 && x < cells.length && y < cells[x].length) {
+          newCells[x][y] = true;
+        }
+      } else {
+        if (x >= 0 && y >= 0 && x < cells.length && y < cells[x].length) {
+          newCells[x][y] = false;
+        }
+      }
+    } else {
+      if (neighbors === 3) {
+        newAliveCells.push({ x: x, y: y });
+        if (x >= 0 && y >= 0 && x < cells.length && y < cells[x].length) {
+          newCells[x][y] = true;
+        }
+      } else {
+        if (x >= 0 && y >= 0 && x < cells.length && y < cells[x].length) {
+          newCells[x][y] = false;
+        }
+      }
+    }
+  }
+
+  aliveCells = newAliveCells;
   cells = newCells;
+  document.getElementById("togglePlayState").innerHTML = `Pause – ${calcCount}`;
   drawBoard();
 }
 
