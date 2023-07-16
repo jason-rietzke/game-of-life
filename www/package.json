@@ -4,9 +4,10 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "vite --host",
+		"dev": "npm run build-wasm && vite --host",
 		"build": "tsc && vite build",
-		"preview": "vite preview --host"
+		"preview": "vite preview --host",
+		"build-wasm": "cd .. && wasm-pack build"
 	},
 	"devDependencies": {
 		"typescript": "^4.9.3",

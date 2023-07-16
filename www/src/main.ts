@@ -3,17 +3,51 @@ import "./style.css";
 import { memory } from "game-of-life/game_of_life_bg.wasm";
 import { Universe, Cell } from "game-of-life";
 
-const CELL_SIZE = 3; // px
+const CELL_SIZE = 10; // px
 const GRID_COLOR = "#393a3c";
 const DEAD_COLOR = "#151618";
 const ALIVE_COLOR = "#94a8ff";
 
+const canvas = document.getElementById("game-of-life-canvas") as HTMLCanvasElement | null;
+if (!canvas) throw new Error("Canvas not found");
+const playToggleBtn = document.getElementById("play-toggle") as HTMLButtonElement | null;
+if (!playToggleBtn) throw new Error("PlayToggle not found");
+const randomizerBtn = document.getElementById("randomizer") as HTMLButtonElement | null;
+if (!randomizerBtn) throw new Error("Randomizer not found");
+const clearBtn = document.getElementById("clear") as HTMLButtonElement | null;
+if (!clearBtn) throw new Error("Clear not found");
+
+let animationId: number | null = null;
+const isPaused = () => {
+	return animationId === null;
+};
+
+const play = () => {
+	playToggleBtn.textContent = "⏸";
+	renderLoop();
+};
+const pause = () => {
+	playToggleBtn.textContent = "▶";
+	if (animationId) cancelAnimationFrame(animationId);
+	animationId = null;
+};
+playToggleBtn.addEventListener("click", () => (isPaused() ? play() : pause()));
+randomizerBtn.addEventListener("click", () => {
+	universe.randomize();
+	drawGrid();
+	drawCells();
+});
+clearBtn.addEventListener("click", () => {
+	universe.clear();
+	drawGrid();
+	drawCells();
+});
+
 const universe = Universe.new(window.innerWidth / CELL_SIZE, window.innerHeight / CELL_SIZE);
+universe.randomize();
 const width = universe.width();
 const height = universe.height();
 
-const canvas = document.getElementById("game-of-life-canvas") as HTMLCanvasElement | null;
-if (!canvas) throw new Error("Canvas not found");
 canvas.height = (CELL_SIZE + 1) * height + 1;
 canvas.width = (CELL_SIZE + 1) * width + 1;
 
@@ -23,11 +57,9 @@ if (!ctx) throw new Error(`Context ${ctxType} not found`);
 
 const renderLoop = () => {
 	universe.tick();
-
 	drawGrid();
 	drawCells();
-
-	requestAnimationFrame(renderLoop);
+	animationId = requestAnimationFrame(renderLoop);
 };
 
 const drawGrid = () => {
@@ -48,7 +80,6 @@ const drawGrid = () => {
 
 	ctx.stroke();
 };
-
 const drawCells = () => {
 	const cellsPtr = universe.cells();
 	const cells = new Uint8Array(memory.buffer, cellsPtr, width * height);
@@ -74,4 +105,21 @@ const getIndex = (row: number, column: number) => {
 
 drawGrid();
 drawCells();
-requestAnimationFrame(renderLoop);
+
+canvas.addEventListener("click", (event) => {
+	const boundingRect = canvas.getBoundingClientRect();
+
+	const scaleX = canvas.width / boundingRect.width;
+	const scaleY = canvas.height / boundingRect.height;
+
+	const canvasLeft = (event.clientX - boundingRect.left) * scaleX;
+	const canvasTop = (event.clientY - boundingRect.top) * scaleY;
+
+	const row = Math.min(Math.floor(canvasTop / (CELL_SIZE + 1)), height - 1);
+	const col = Math.min(Math.floor(canvasLeft / (CELL_SIZE + 1)), width - 1);
+
+	universe.toggle_cell(row, col);
+
+	drawGrid();
+	drawCells();
+});
