@@ -14,6 +14,8 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub fn greet() {
-    alert("Hello, wasm-game-of-life!");
+pub fn greet(msg: &str) {
+    let mut s = String::from("Hello, ");
+    s.push_str(msg);
+    alert(&s);
 }
