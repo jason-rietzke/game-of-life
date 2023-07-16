@@ -38,8 +38,17 @@
 	justify-content: center;
 	align-items: center;
 
-	font-size: 4em;
 	display: flex;
 	flex-direction: row;
 	gap: 0.1em;
+}
+
+#fps {
+	position: absolute;
+	top: 26px;
+	left: 0;
+	white-space: pre;
+	font-family: monospace;
+	background-color: #21354788;
+	backdrop-filter: blur(10px);
 }

@@ -4,6 +4,8 @@ import { memory } from "game-of-life/game_of_life_bg.wasm";
 import { Universe, Cell } from "game-of-life";
 
 const CELL_SIZE = 10; // px
+const UNIVERSE_WIDTH = window.innerWidth / CELL_SIZE;
+const UNIVERSE_HEIGHT = window.innerHeight / CELL_SIZE;
 const GRID_COLOR = "#393a3c";
 const DEAD_COLOR = "#151618";
 const ALIVE_COLOR = "#94a8ff";
@@ -43,7 +45,7 @@ clearBtn.addEventListener("click", () => {
 	drawCells();
 });
 
-const universe = Universe.new(window.innerWidth / CELL_SIZE, window.innerHeight / CELL_SIZE);
+const universe = Universe.new(UNIVERSE_WIDTH, UNIVERSE_HEIGHT);
 universe.randomize();
 const width = universe.width();
 const height = universe.height();
@@ -56,6 +58,7 @@ const ctx = canvas.getContext(ctxType);
 if (!ctx) throw new Error(`Context ${ctxType} not found`);
 
 const renderLoop = () => {
+	fps.render();
 	universe.tick();
 	drawGrid();
 	drawCells();
@@ -83,15 +86,28 @@ const drawGrid = () => {
 const drawCells = () => {
 	const cellsPtr = universe.cells();
 	const cells = new Uint8Array(memory.buffer, cellsPtr, width * height);
-
 	ctx.beginPath();
 
+	// Alive cells
+	ctx.fillStyle = ALIVE_COLOR;
 	for (let row = 0; row < height; row++) {
 		for (let col = 0; col < width; col++) {
 			const idx = getIndex(row, col);
+			if (cells[idx] !== Cell.Alive) {
+				continue;
+			}
+			ctx.fillRect(col * (CELL_SIZE + 1) + 1, row * (CELL_SIZE + 1) + 1, CELL_SIZE, CELL_SIZE);
+		}
+	}
 
-			ctx.fillStyle = cells[idx] === Cell.Dead ? DEAD_COLOR : ALIVE_COLOR;
-
+	// Dead cells.
+	ctx.fillStyle = DEAD_COLOR;
+	for (let row = 0; row < height; row++) {
+		for (let col = 0; col < width; col++) {
+			const idx = getIndex(row, col);
+			if (cells[idx] !== Cell.Dead) {
+				continue;
+			}
 			ctx.fillRect(col * (CELL_SIZE + 1) + 1, row * (CELL_SIZE + 1) + 1, CELL_SIZE, CELL_SIZE);
 		}
 	}
@@ -123,3 +139,53 @@ canvas.addEventListener("click", (event) => {
 	drawGrid();
 	drawCells();
 });
+
+const fps = new (class {
+	fps: HTMLElement;
+	frames: number[];
+	lastFrameTimeStamp: number;
+
+	constructor() {
+		const el = document.getElementById("fps");
+		if (!el) throw new Error("FPS not found");
+		this.fps = el;
+		this.frames = [];
+		this.lastFrameTimeStamp = performance.now();
+	}
+
+	render() {
+		// Convert the delta time since the last frame render into a measure
+		// of frames per second.
+		const now = performance.now();
+		const delta = now - this.lastFrameTimeStamp;
+		this.lastFrameTimeStamp = now;
+		const fps = (1 / delta) * 1000;
+
+		// Save only the latest 100 timings.
+		this.frames.push(fps);
+		if (this.frames.length > 100) {
+			this.frames.shift();
+		}
+
+		// Find the max, min, and mean of our 100 latest timings.
+		let min = Infinity;
+		let max = -Infinity;
+		let sum = 0;
+		for (let i = 0; i < this.frames.length; i++) {
+			sum += this.frames[i];
+			min = Math.min(this.frames[i], min);
+			max = Math.max(this.frames[i], max);
+		}
+		let mean = sum / this.frames.length;
+
+		// Render the statistics.
+		this.fps.textContent = [
+			`Frames per Second:`,
+			`${width}*${height}=${width * height} cells`,
+			`latest = ${Math.round(fps)}`,
+			`avg of last 100 = ${Math.round(mean)}`,
+			`min of last 100 = ${Math.round(min)}`,
+			`max of last 100 = ${Math.round(max)}`,
+		].join("\n");
+	}
+})();
