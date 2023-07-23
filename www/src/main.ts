@@ -14,6 +14,8 @@ const canvas = document.getElementById("game-of-life-canvas") as HTMLCanvasEleme
 if (!canvas) throw new Error("Canvas not found");
 const playToggleBtn = document.getElementById("play-toggle") as HTMLButtonElement | null;
 if (!playToggleBtn) throw new Error("PlayToggle not found");
+const nextBtn = document.getElementById("next") as HTMLButtonElement | null;
+if (!nextBtn) throw new Error("Next not found");
 const randomizerBtn = document.getElementById("randomizer") as HTMLButtonElement | null;
 if (!randomizerBtn) throw new Error("Randomizer not found");
 const clearBtn = document.getElementById("clear") as HTMLButtonElement | null;
@@ -34,6 +36,11 @@ const pause = () => {
 	animationId = null;
 };
 playToggleBtn.addEventListener("click", () => (isPaused() ? play() : pause()));
+nextBtn.addEventListener("click", () => {
+	universe.tick();
+	drawGrid();
+	drawCells();
+});
 randomizerBtn.addEventListener("click", () => {
 	universe.randomize();
 	drawGrid();
